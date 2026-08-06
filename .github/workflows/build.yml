@@ -5,7 +5,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -13,29 +12,27 @@ jobs:
 
       - name: Find Project Structure
         run: |
-          find. -type f -name "gradlew" | head -n 1
-          find. -type d -name "app" | head -n 1
+          find. -type f -name "gradlew"
+          find. -type d -name "app"
           ls -la
-          ls -la ruby/ || true
 
       - name: Decode Keystore
         run: |
           APP_DIR=$(find. -type d -name "app" | head -n 1)
           echo "APP DIR is $APP_DIR"
-          mkdir -p $APP_DIR
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > $APP_DIR/ruby-release.keystore
-          echo "Keystore saved to $APP_DIR/ruby-release.keystore"
-          ls -la $APP_DIR/
+          mkdir -p "$APP_DIR"
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > "$APP_DIR/ruby-release.keystore"
+          ls -la "$APP_DIR/"
 
       - name: Build Signed APK
         run: |
           GRADLEW=$(find. -name "gradlew" -type f | head -n 1)
           APP_DIR=$(find. -type d -name "app" | head -n 1)
-          echo "Using $GRADLEW and $APP_DIR"
-          chmod +x $GRADLEW
-          $GRADLEW assembleRelease -Pandroid.injected.signing.store.file=$(pwd)/$APP_DIR/ruby-release.keystore -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+          chmod +x "$GRADLEW"
+          "$GRADLEW" assembleRelease -Pandroid.injected.signing.store.file=$(pwd)/$APP_DIR/ruby-release.keystore -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: Ruby-Signed-APK
           path: "**/build/outputs/apk/release/*.apk"
