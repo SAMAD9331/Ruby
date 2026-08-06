@@ -1,4 +1,4 @@
-Name: Build Signed APK
+name: Build Signed APK
 on: [push]
 jobs:
   build:
