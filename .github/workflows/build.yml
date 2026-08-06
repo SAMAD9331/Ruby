@@ -16,11 +16,20 @@ jobs:
 
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > ruby-release.keystore
-          ls -la
+          # Project root dhoondo jahan settings.gradle ya build.gradle hai
+          PROJECT_DIR=$(dirname $(find . -maxdepth 3 -name "settings.gradle*" -o -name "build.gradle*" | head -n 1))
+          echo "PROJECT_DIR is $PROJECT_DIR"
+          
+          # Keystore file project folder ke andar decode karo
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > "$PROJECT_DIR/ruby-release.keystore"
+          ls -la "$PROJECT_DIR"
 
-      - name: Build Signed APK with System Gradle
+      - name: Build Signed APK
         run: |
+          # Android project ke folder mein jaa kar build run karo
+          PROJECT_DIR=$(dirname $(find . -maxdepth 3 -name "settings.gradle*" -o -name "build.gradle*" | head -n 1))
+          cd "$PROJECT_DIR"
+          
           gradle assembleRelease \
             -Pandroid.injected.signing.store.file=$(pwd)/ruby-release.keystore \
             -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
