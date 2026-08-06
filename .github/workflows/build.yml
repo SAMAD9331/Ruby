@@ -1,10 +1,5 @@
-name: Build Android APK
-
-on:
-  push:
-    branches: [ "main", "master" ]
-  workflow_dispatch:
-
+name: Build Signed APK
+on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,12 +9,18 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Make gradlew executable
-        run: chmod +x gradlew
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/ruby-release.keystore
+
+      - name: Build Signed APK
+        run: |
+          GRADLEW=$(find. -name "gradlew" -type f | head -n 1)
+          chmod +x $GRADLEW
+          $GRADLEW assembleRelease -Pandroid.injected.signing.store.file=$(pwd)/app/ruby-release.keystore -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+
+      - uses: actions/upload-artifact@v4
         with:
-          name: Ruby-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Ruby-Signed-APK
+          path: "**/app/build/outputs/apk/release/*.apk"
